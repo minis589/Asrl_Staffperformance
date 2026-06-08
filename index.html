@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASRL Staff Performance Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN TOKENS ─────────────────────────────────────────── */
+:root {
+  --navy:        #1e3a5f;
+  --navy-hover:  #254a78;
+  --navy-active: #163050;
+  --blue-mid:    #2e5c94;
+  --blue-pale:   #eef3fb;
+  --blue-line:   #c8d9f0;
+  --white:       #ffffff;
+  --surface:     #f5f7fa;
+  --surface2:    #edf0f5;
+  --border:      #dce6f0;
+  --border-dark: #c4d4e8;
+  --text-h:      #0f1f35;
+  --text-b:      #2c3e55;
+  --text-m:      #5a6a7e;
+  --text-lt:     #94a3b8;
+  --green:       #166534;
+  --green-bg:    #dcfce7;
+  --amber:       #92400e;
+  --amber-bg:    #fef3c7;
+  --red:         #991b1b;
+  --red-bg:      #fee2e2;
+  --shadow-xs:   0 1px 2px rgba(15,31,53,.06);
+  --shadow-sm:   0 1px 4px rgba(15,31,53,.08), 0 1px 2px rgba(15,31,53,.04);
+  --shadow:      0 4px 12px rgba(15,31,53,.10), 0 1px 3px rgba(15,31,53,.06);
+  --r:           6px;
+  --r-lg:        10px;
+  --font:        'Inter', system-ui, sans-serif;
+  --mono:        'IBM Plex Mono', monospace;
+  --transition:  .15s ease;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--surface);
+  color: var(--text-b);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LOADING OVERLAY ────────────────────────────────────────── */
+#loadOverlay {
+  position: fixed; inset: 0;
+  background: var(--navy);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
+  gap: 16px;
+  transition: opacity .3s;
+}
+#loadOverlay.fade { opacity: 0; pointer-events: none; }
+.load-logo {
+  width: 48px; height: 48px;
+  background: rgba(255,255,255,.1);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.load-logo svg { width: 26px; height: 26px; }
+.load-text { font-size: 13px; color: rgba(255,255,255,.5); font-weight: 500; }
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid rgba(255,255,255,.15);
+  border-top-color: rgba(255,255,255,.7);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── LOGIN ──────────────────────────────────────────────────── */
+#loginScreen {
+  display: none;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--surface);
+}
+.login-card {
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  background: var(--white);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+/* left panel */
+.lc-left {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--navy);
+  padding: 44px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.lc-mark {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,.1);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.lc-mark svg { width: 22px; height: 22px; }
+.lc-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.4);
+  margin-bottom: 8px;
+}
+.lc-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+.lc-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,.4);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.lc-divider {
+  height: 1px;
+  background: rgba(255,255,255,.08);
+  margin: 28px 0;
+}
+.lc-stores-head {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+  margin-bottom: 10px;
+}
+.lc-store-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+}
+.lc-store-row:last-child { border-bottom: none; }
+.lc-dot {
+  width: 5px; height: 5px;
+  background: rgba(255,255,255,.25);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+/* right panel */
+.lc-right {
+  flex: 1;
+  padding: 44px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.lc-right h2 { font-size: 20px; font-weight: 700; color: var(--text-h); }
+.lc-right p  { font-size: 13px; color: var(--text-m); margin-top: 5px; }
+.lc-form { margin-top: 28px; display: flex; flex-direction: column; gap: 16px; }
+
+/* form controls */
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fl {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .5px; text-transform: uppercase;
+  color: var(--text-m);
+}
+.fi, .fs {
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 13px;
+  color: var(--text-b);
+  font-family: var(--font);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  appearance: none;
+}
+.fi:focus, .fs:focus {
+  border-color: var(--blue-mid);
+  box-shadow: 0 0 0 3px rgba(46,92,148,.12);
+}
+.fs-wrap { position: relative; }
+.fs-wrap::after {
+  content: "";
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--text-lt);
+  pointer-events: none;
+}
+.btn-login {
+  width: 100%;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  padding: 11px 24px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-login:hover:not(:disabled)  { background: var(--navy-hover); }
+.btn-login:active:not(:disabled) { background: var(--navy-active); }
+.btn-login:disabled { opacity: .55; cursor: not-allowed; }
+.login-err {
+  font-size: 12px;
+  color: var(--red);
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── APP SHELL ──────────────────────────────────────────────── */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+
+/* topbar */
+.topbar {
+  height: 54px;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 0 rgba(0,0,0,.15);
+}
+.tb-left { display: flex; align-items: center; gap: 10px; }
+.tb-icon {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,.1);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tb-icon svg { width: 16px; height: 16px; }
+.tb-name  { font-size: 14px; font-weight: 700; color: #fff; }
+.tb-store { font-size: 11px; color: rgba(255,255,255,.45); }
+.tb-right { display: flex; align-items: center; gap: 8px; }
+.tb-badge {
+  font-size: 11px; font-weight: 600;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.8);
+  border-radius: 5px;
+  padding: 3px 9px;
+}
+.tb-out {
+  font-size: 12px; font-weight: 500;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.55);
+  border-radius: 5px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--transition);
+}
+.tb-out:hover { border-color: rgba(255,255,255,.5); color: #fff; }
+
+/* nav tabs */
+.tabbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  padding: 0 20px;
+  gap: 2px;
+}
+.tab-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 13px 16px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-m);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+  background: none; border-left: none; border-right: none; border-top: none;
+  font-family: var(--font);
+}
+.tab-btn svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .6; }
+.tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+.tab-btn.active svg { opacity: 1; }
+.tab-btn:hover:not(.active) { color: var(--text-b); }
+
+/* ── PAGE ────────────────────────────────────────────────────── */
+.pg { padding: 22px 20px; max-width: 1300px; margin: 0 auto; width: 100%; }
+.pg-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
+}
+.ph-title { font-size: 16px; font-weight: 700; color: var(--text-h); }
+.ph-sub   { font-size: 12px; color: var(--text-m); margin-top: 2px; }
+
+/* ── STORE TILES ─────────────────────────────────────────────── */
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.store-tile {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 13px 14px;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-xs);
+}
+.store-tile:hover { border-color: var(--blue-mid); box-shadow: var(--shadow-sm); }
+.store-tile.sel   { border-color: var(--navy); background: var(--blue-pale); }
+.st-code { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--blue-mid); }
+.st-name { font-size: 13px; font-weight: 600; color: var(--text-h); margin-top: 3px; }
+
+/* ── CARD ────────────────────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-xs);
+}
+.card + .card { margin-top: 14px; }
+.card-hd {
+  font-size: 11px; font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--text-m);
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── FORM ROW ─────────────────────────────────────────────────── */
+.fg-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.fg-row .fg { flex: 1; min-width: 130px; }
+
+/* ── ENTRY TABLE ─────────────────────────────────────────────── */
+.tbl-scroll { overflow-x: auto; }
+table.et {
+  width: 100%; border-collapse: collapse;
+  font-size: 13px; min-width: 680px;
+}
+table.et th {
+  background: var(--surface);
+  color: var(--text-m);
+  font-size: 10px; font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 9px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+table.et td {
+  padding: 5px 5px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+table.et tr:last-child td { border-bottom: none; }
+table.et input, table.et select {
+  width: 100%; min-width: 75px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 9px;
+  color: var(--text-b);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+table.et input:focus, table.et select:focus {
+  border-color: var(--blue-mid);
+  box-shadow: 0 0 0 2px rgba(46,92,148,.1);
+}
+.row-del {
+  background: none; border: 1px solid var(--border);
+  color: var(--red); border-radius: 5px;
+  width: 27px; height: 27px; cursor: pointer;
+  font-size: 16px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.row-del:hover { background: var(--red-bg); border-color: var(--red); }
+.add-row-btn {
+  width: 100%; margin-top: 10px;
+  background: none; border: 1px dashed var(--border-dark);
+  border-radius: 5px; padding: 9px;
+  font-family: var(--font); font-size: 13px; color: var(--text-m);
+  cursor: pointer; transition: all var(--transition);
+}
+.add-row-btn:hover { border-color: var(--blue-mid); color: var(--navy); background: var(--blue-pale); }
+
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 20px;
+  border-radius: var(--r);
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn-navy { background: var(--navy); color: #fff; border: none; }
+.btn-navy:hover:not(:disabled) { background: var(--navy-hover); }
+.btn-navy:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost { background: none; border: 1px solid var(--border); color: var(--text-m); }
+.btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
+.action-bar {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 10px; margin-top: 16px; flex-wrap: wrap;
+}
+.save-note { font-size: 11px; color: var(--text-lt); margin-right: auto; }
+
+/* ── KPI ROW ─────────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.kpi-c {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xs);
+}
+.kpi-c.accent { border-left: 3px solid var(--navy); }
+.kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text-m); margin-bottom: 6px; }
+.kpi-val   { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--text-h); line-height: 1; }
+.kpi-note  { font-size: 11px; color: var(--text-lt); margin-top: 4px; }
+
+/* ── FILTER BAR ──────────────────────────────────────────────── */
+.filter-bar {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-xs);
+}
+.filter-bar .fg { flex: 1; min-width: 120px; margin: 0; }
+
+/* ── DASHBOARD TABLE ─────────────────────────────────────────── */
+.dash-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+.dash-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dash-card th {
+  background: var(--surface);
+  color: var(--text-m);
+  font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
+  padding: 10px 12px;
+  text-align: left; border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.dash-card th:hover { color: var(--navy); }
+.dash-card td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap; color: var(--text-b);
+}
+.dash-card tr:last-child td { border-bottom: none; }
+.dash-card tr:hover td { background: var(--blue-pale); }
+.pill {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.pill-g { background: var(--green-bg); color: var(--green); }
+.pill-a { background: var(--amber-bg); color: var(--amber); }
+.pill-r { background: var(--red-bg);   color: var(--red); }
+.empty-row td { text-align: center; padding: 48px 12px !important; color: var(--text-lt); font-size: 13px; }
+
+/* ── TOAST ───────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 22px; right: 22px;
+  background: var(--text-h);
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: var(--r);
+  font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow);
+  z-index: 999;
+  opacity: 0; transform: translateY(10px);
+  transition: all .25s;
+  max-width: 300px;
+}
+.toast.show  { opacity: 1; transform: translateY(0); }
+.toast.t-ok  { background: #14532d; }
+.toast.t-err { background: #7f1d1d; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .lc-left { display: none; }
+  .lc-right { padding: 32px 24px; }
+  .pg { padding: 16px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .store-grid { grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loadOverlay">
+  <div class="load-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  </div>
+  <div class="spinner"></div>
+  <div class="load-text">Loading portal…</div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+
+    <div class="lc-left">
+      <div class="lc-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </div>
+      <div class="lc-eyebrow">ASRL · Miniso India</div>
+      <div class="lc-title">Staff Performance Portal</div>
+      <div class="lc-desc">Daily entry and analytics for all store managers</div>
+      <div class="lc-divider"></div>
+      <div class="lc-stores-head">15 Stores</div>
+      <div id="sideStoreList">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <div class="lc-right">
+      <h2>Welcome back</h2>
+      <p>Sign in with your store credentials to continue</p>
+
+      <div class="lc-form">
+        <div class="fg">
+          <label class="fl">Store</label>
+          <div class="fs-wrap">
+            <select class="fs" id="lStore">
+              <option value="">— Select your store —</option>
+              <option value="ADMIN">Admin — All Stores (Alan)</option>
+              <optgroup label="──────────────">
+              <option value="INI5">Shimla  (INI5)</option>
+              <option value="IN9V">Dehradun  (IN9V)</option>
+              <option value="INBH">Bhopal  (INBH)</option>
+              <option value="INBO">Borivali  (INBO)</option>
+              <option value="INMS">Mussoorie  (INMS)</option>
+              <option value="INAJ">Goa  (INAJ)</option>
+              <option value="INLH">Lulu Hyderabad  (INLH)</option>
+              <option value="INJL">Jalandhar  (INJL)</option>
+              <option value="INJM">Jammu  (INJM)</option>
+              <option value="INSA">Surat Adajan  (INSA)</option>
+              <option value="INBT">Bathinda  (INBT)</option>
+              <option value="INHW">Haldwani  (INHW)</option>
+              <option value="ININ">Indore  (ININ)</option>
+              <option value="INPT">Patiala  (INPT)</option>
+              <option value="INVE">Vesu  (INVE)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Password</label>
+          <input class="fi" type="password" id="lPass"
+                 placeholder="Enter store password"
+                 onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+
+        <button class="btn-login" id="lBtn" onclick="doLogin()">
+          <span id="lBtnTxt">Sign In</span>
+        </button>
+
+        <div class="login-err" id="lErr"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </div>
+      <div>
+        <div class="tb-name">ASRL Performance Portal</div>
+        <div class="tb-store" id="tbStore"></div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-badge" id="tbBadge"></div>
+      <button class="tb-out" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="entry" onclick="switchTab('entry')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Data Entry
+    </button>
+    <button class="tab-btn" data-tab="dash" onclick="switchTab('dash')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      Dashboard
+    </button>
+  </div>
+
+  <!-- ── ENTRY TAB ──────────────────────────────────────────── -->
+  <div id="tab-entry" class="pg">
+
+    <!-- admin store picker -->
+    <div id="entryPicker" style="display:none">
+      <div class="pg-head">
+        <div><div class="ph-title">Select store to enter data</div></div>
+      </div>
+      <div class="store-grid" id="entryPickerGrid"></div>
+    </div>
+
+    <!-- entry form -->
+    <div id="entryFormWrap" style="display:none">
+      <div class="pg-head">
+        <div>
+          <div class="ph-title" id="entryTitle">Daily Staff Entry</div>
+          <div class="ph-sub"   id="entrySub"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">Entry Details</div>
+        <div class="fg-row">
+          <div class="fg">
+            <label class="fl">Date</label>
+            <input class="fi" type="date" id="entryDate">
+          </div>
+          <div class="fg" id="entryStoreField" style="display:none">
+            <label class="fl">Store</label>
+            <input class="fi" id="entryStoreVal" type="text" readonly
+                   style="background:var(--surface); color:var(--text-m);">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">Staff Performance</div>
+        <div class="tbl-scroll">
+          <table class="et">
+            <thead>
+              <tr>
+                <th style="min-width:150px">Staff Name</th>
+                <th style="min-width:100px">Target (₹)</th>
+                <th style="min-width:100px">Sales (₹)</th>
+                <th style="min-width:65px">NOB</th>
+                <th style="min-width:90px">Big Bill</th>
+                <th style="min-width:75px">₹1500+</th>
+                <th style="min-width:75px">₹2000+</th>
+                <th style="min-width:75px">₹3000+</th>
+                <th style="width:34px"></th>
+              </tr>
+            </thead>
+            <tbody id="eRows"></tbody>
+          </table>
+        </div>
+        <button class="add-row-btn" onclick="addRow()">+ Add staff row</button>
+      </div>
+
+      <div class="action-bar">
+        <span class="save-note" id="saveNote"></span>
+        <button class="btn btn-ghost" onclick="clearEntry()">Clear</button>
+        <button class="btn btn-navy" id="submitBtn" onclick="submitData()">Save Entry</button>
+      </div>
+    </div>
+
+    <div id="entryEmpty" style="display:none; text-align:center; padding:60px; color:var(--text-lt); font-size:13px;">
+      Select a store above to begin entering data.
+    </div>
+
+  </div>
+
+  <!-- ── DASHBOARD TAB ──────────────────────────────────────── -->
+  <div id="tab-dash" class="pg" style="display:none">
+
+    <!-- admin picker -->
+    <div id="dashPicker" style="display:none">
+      <div class="pg-head">
+        <div>
+          <div class="ph-title">Dashboard</div>
+          <div class="ph-sub">Select a store or view all</div>
+        </div>
+        <button class="btn btn-navy" onclick="loadDash('ALL')">All Stores</button>
+      </div>
+      <div class="store-grid" id="dashPickerGrid"></div>
+    </div>
+
+    <!-- dashboard content -->
+    <div id="dashWrap" style="display:none">
+      <div class="pg-head">
+        <div>
+          <div class="ph-title" id="dashTitle">Dashboard</div>
+          <div class="ph-sub" id="dashSub"></div>
+        </div>
+        <div id="dashBack" style="display:none">
+          <button class="btn btn-ghost" onclick="backDashPicker()">← All stores</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="fg">
+          <label class="fl">From</label>
+          <input class="fi" type="date" id="fFrom">
+        </div>
+        <div class="fg">
+          <label class="fl">To</label>
+          <input class="fi" type="date" id="fTo">
+        </div>
+        <div class="fg">
+          <label class="fl">Staff</label>
+          <div class="fs-wrap">
+            <select class="fs" id="fStaff"><option value="">All staff</option></select>
+          </div>
+        </div>
+        <div class="fg" id="fStoreWrap" style="display:none">
+          <label class="fl">Store</label>
+          <div class="fs-wrap">
+            <select class="fs" id="fStore">
+              <option value="">All stores</option>
+              <option value="INI5">Shimla</option><option value="IN9V">Dehradun</option>
+              <option value="INBH">Bhopal</option><option value="INBO">Borivali</option>
+              <option value="INMS">Mussoorie</option><option value="INAJ">Goa</option>
+              <option value="INLH">Lulu Hyderabad</option><option value="INJL">Jalandhar</option>
+              <option value="INJM">Jammu</option><option value="INSA">Surat Adajan</option>
+              <option value="INBT">Bathinda</option><option value="INHW">Haldwani</option>
+              <option value="ININ">Indore</option><option value="INPT">Patiala</option>
+              <option value="INVE">Vesu</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-navy" onclick="applyFilters()">Apply</button>
+        <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="dash-card">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="srt('date')">Date ↕</th>
+              <th id="thStore" onclick="srt('storeName')">Store ↕</th>
+              <th onclick="srt('staffName')">Staff ↕</th>
+              <th onclick="srt('sales')">Sales ↕</th>
+              <th onclick="srt('target')">Target ↕</th>
+              <th onclick="srt('ach')">Ach % ↕</th>
+              <th onclick="srt('nob')">NOB ↕</th>
+              <th onclick="srt('atv')">ATV ↕</th>
+              <th onclick="srt('bigBill')">Big Bill ↕</th>
+              <th onclick="srt('bb1500')">₹1500+ ↕</th>
+              <th onclick="srt('bb2000')">₹2000+ ↕</th>
+              <th onclick="srt('bb3000')">₹3000+ ↕</th>
+            </tr>
+          </thead>
+          <tbody id="dashBody">
+            <tr class="empty-row"><td colspan="12">Apply filters to load data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+// ══ STATE ════════════════════════════════════════════════════
+var S            = null;   // session
+var ENTRY_STORE  = null;   // { code, name, staff[] }
+var DASH_ROWS    = [];
+var SORT_K = 'date', SORT_D = -1;
+var ROW_ID = 0;
+var DASH_STORE   = null;
+
+var STORES = [
+  {code:'INI5',name:'Shimla'},{code:'IN9V',name:'Dehradun'},
+  {code:'INBH',name:'Bhopal'},{code:'INBO',name:'Borivali'},
+  {code:'INMS',name:'Mussoorie'},{code:'INAJ',name:'Goa'},
+  {code:'INLH',name:'Lulu Hyderabad'},{code:'INJL',name:'Jalandhar'},
+  {code:'INJM',name:'Jammu'},{code:'INSA',name:'Surat Adajan'},
+  {code:'INBT',name:'Bathinda'},{code:'INHW',name:'Haldwani'},
+  {code:'ININ',name:'Indore'},{code:'INPT',name:'Patiala'},
+  {code:'INVE',name:'Vesu'}
+];
+
+// ══ API ══════════════════════════════════════════════════════
+function api(params) {
+  if (!API_URL || API_URL === 'PASTE_YOUR_APPS_SCRIPT_URL_HERE') {
+    return Promise.reject(new Error('API URL not configured. Please edit docs/config.js'));
+  }
+  var qs = Object.keys(params).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+  return fetch(API_URL + '?' + qs)
+    .then(function(r) {
+      if (!r.ok) throw new Error('Network error: ' + r.status);
+      return r.json();
+    });
+}
+
+// ══ BOOT ═════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', function() {
+  // Populate login left panel
+  var stored = STORES.map(function(s) {
+    return '<div class="lc-store-row"><div class="lc-dot"></div>'+s.name+' <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.3)">'+s.code+'</span></div>';
+  }).join('');
+  var el = document.getElementById('sideStoreList');
+  if (el) el.innerHTML = stored;
+
+  // Check config
+  if (!API_URL || API_URL === 'PASTE_YOUR_APPS_SCRIPT_URL_HERE') {
+    document.getElementById('loadOverlay').innerHTML =
+      '<div style="text-align:center;padding:40px;max-width:400px">' +
+      '<div style="color:rgba(255,255,255,.4);font-size:13px;line-height:1.8">' +
+      '⚠️ API not configured.<br>Open <code style="background:rgba(255,255,255,.1);padding:2px 6px;border-radius:3px">docs/config.js</code> and paste your Apps Script Web App URL.</div></div>';
+    return;
+  }
+
+  // Restore session from sessionStorage
+  var saved = sessionStorage.getItem('asrl_session');
+  if (saved) {
+    try { S = JSON.parse(saved); } catch(e) {}
+  }
+
+  setTimeout(function() {
+    var ol = document.getElementById('loadOverlay');
+    ol.classList.add('fade');
+    setTimeout(function() { ol.style.display = 'none'; }, 300);
+    if (S && S.token) {
+      startApp();
+    } else {
+      document.getElementById('loginScreen').style.display = 'flex';
+    }
+  }, 600);
+});
+
+// ══ LOGIN ════════════════════════════════════════════════════
+function doLogin() {
+  var code = document.getElementById('lStore').value;
+  var pass = document.getElementById('lPass').value;
+  var err  = document.getElementById('lErr');
+  var btn  = document.getElementById('lBtn');
+  var txt  = document.getElementById('lBtnTxt');
+  err.textContent = '';
+  if (!code) { err.textContent = 'Please select a store.'; return; }
+  if (!pass) { err.textContent = 'Please enter the password.'; return; }
+  btn.disabled = true; txt.textContent = 'Signing in…';
+
+  api({ action:'login', storeCode:code, password:pass })
+    .then(function(r) {
+      btn.disabled = false; txt.textContent = 'Sign In';
+      if (r.success) {
+        S = r;
+        sessionStorage.setItem('asrl_session', JSON.stringify(S));
+        startApp();
+      } else {
+        err.textContent = r.message || 'Incorrect credentials.';
+      }
+    })
+    .catch(function(e) {
+      btn.disabled = false; txt.textContent = 'Sign In';
+      err.textContent = 'Connection error: ' + e.message;
+    });
+}
+
+function doLogout() {
+  S = null; ENTRY_STORE = null; DASH_ROWS = [];
+  sessionStorage.removeItem('asrl_session');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('lPass').value = '';
+  document.getElementById('lErr').textContent = '';
+}
+
+// ══ APP START ════════════════════════════════════════════════
+function startApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('entryDate').value = today;
+  document.getElementById('fFrom').value = today;
+  document.getElementById('fTo').value   = today;
+
+  if (S.role === 'admin') {
+    document.getElementById('tbBadge').textContent = 'Admin';
+    document.getElementById('tbStore').textContent = 'All 15 stores';
+    setupAdmin();
+  } else {
+    document.getElementById('tbBadge').textContent = S.store.code;
+    document.getElementById('tbStore').textContent = S.store.name;
+    setupManager();
+  }
+}
+
+// ══ MANAGER ══════════════════════════════════════════════════
+function setupManager() {
+  ENTRY_STORE = { code: S.store.code, name: S.store.name, staff: S.staff || [] };
+  showEntryForm(S.store.name, S.store.code, S.staff || []);
+  // Dashboard
+  document.getElementById('dashWrap').style.display = 'block';
+  document.getElementById('dashTitle').textContent = S.store.name;
+  loadDash(S.store.code);
+}
+
+// ══ ADMIN ════════════════════════════════════════════════════
+function setupAdmin() {
+  // Entry picker
+  document.getElementById('entryPicker').style.display = 'block';
+  document.getElementById('entryEmpty').style.display  = 'block';
+  document.getElementById('entryFormWrap').style.display = 'none';
+  document.getElementById('entryPickerGrid').innerHTML = STORES.map(function(s) {
+    return '<div class="store-tile" data-code="'+s.code+'" onclick="adminPickEntry(\''+s.code+'\',\''+s.name+'\')">'+
+      '<div class="st-code">'+s.code+'</div><div class="st-name">'+s.name+'</div></div>';
+  }).join('');
+  // Dash picker
+  document.getElementById('dashPicker').style.display = 'block';
+  document.getElementById('dashPickerGrid').innerHTML = STORES.map(function(s) {
+    return '<div class="store-tile" data-code="'+s.code+'" onclick="loadDash(\''+s.code+'\')">'+
+      '<div class="st-code">'+s.code+'</div><div class="st-name">'+s.name+'</div></div>';
+  }).join('');
+  document.getElementById('fStoreWrap').style.display = 'block';
+  document.getElementById('thStore').style.display = '';
+  document.getElementById('entryStoreField').style.display = 'flex';
+}
+
+function adminPickEntry(code, name) {
+  document.querySelectorAll('#entryPickerGrid .store-tile').forEach(function(t) {
+    t.classList.toggle('sel', t.dataset.code === code);
+  });
+  document.getElementById('entryEmpty').style.display = 'none';
+  document.getElementById('entryFormWrap').style.display = 'block';
+  document.getElementById('entryTitle').textContent = name + ' — Daily Entry';
+  document.getElementById('entrySub').textContent   = code;
+  document.getElementById('entryStoreVal').value    = name + ' (' + code + ')';
+  ENTRY_STORE = { code:code, name:name, staff:[] };
+  // Fetch live staff
+  api({ action:'getStaff', storeCode:code, token:S.token })
+    .then(function(r) {
+      var staff = r.success ? (r.staff || []) : [];
+      ENTRY_STORE.staff = staff;
+      buildRows(staff);
+    })
+    .catch(function() { buildRows([]); });
+}
+
+// ══ ENTRY FORM ════════════════════════════════════════════════
+function showEntryForm(name, code, staff) {
+  document.getElementById('entryFormWrap').style.display = 'block';
+  document.getElementById('entryTitle').textContent = name + ' — Daily Entry';
+  document.getElementById('entrySub').textContent   = code;
+  buildRows(staff);
+}
+
+function buildRows(staff) {
+  document.getElementById('eRows').innerHTML = '';
+  ROW_ID = 0;
+  if (staff.length > 0) staff.forEach(function(n){ addRow(n); });
+  else addRow('');
+}
+
+function addRow(defName) {
+  defName = defName || '';
+  var id    = ROW_ID++;
+  var staff = ENTRY_STORE ? (ENTRY_STORE.staff || []) : (S.staff || []);
+  var cell  = staff.length > 0
+    ? '<select data-f="staffName">'+staff.map(function(n){
+        return '<option'+(n===defName?' selected':'')+' value="'+n+'">'+n+'</option>';
+      }).join('')+'</select>'
+    : '<input data-f="staffName" value="'+defName+'" placeholder="Staff name">';
+  var tr = document.createElement('tr');
+  tr.id  = 'r'+id;
+  tr.innerHTML =
+    '<td>'+cell+'</td>'+
+    '<td><input type="number" data-f="target"  min="0" placeholder="0"></td>'+
+    '<td><input type="number" data-f="sales"   min="0" placeholder="0"></td>'+
+    '<td><input type="number" data-f="nob"     min="0" placeholder="0"></td>'+
+    '<td><input type="number" data-f="bigBill" min="0" placeholder="0"></td>'+
+    '<td><input type="number" data-f="bb1500"  min="0" placeholder="0"></td>'+
+    '<td><input type="number" data-f="bb2000"  min="0" placeholder="0"></td>'+
+    '<td><input type="number" data-f="bb3000"  min="0" placeholder="0"></td>'+
+    '<td><button class="row-del" onclick="document.getElementById(\'r'+id+'\').remove()">×</button></td>';
+  document.getElementById('eRows').appendChild(tr);
+}
+
+function clearEntry() {
+  document.getElementById('eRows').innerHTML = ''; ROW_ID = 0; addRow('');
+}
+
+function submitData() {
+  if (!ENTRY_STORE) { showToast('Select a store first.','err'); return; }
+  var date = document.getElementById('entryDate').value;
+  if (!date) { showToast('Please select a date.','err'); return; }
+  var rows = [];
+  document.querySelectorAll('#eRows tr').forEach(function(tr) {
+    function g(f){ var e=tr.querySelector('[data-f="'+f+'"]'); return e?e.value.trim():''; }
+    var name = g('staffName');
+    if (!name) return;
+    rows.push({ storeCode:ENTRY_STORE.code, storeName:ENTRY_STORE.name,
+      date:date, staffName:name,
+      target:g('target'), sales:g('sales'), nob:g('nob'),
+      bigBill:g('bigBill'), bb1500:g('bb1500'), bb2000:g('bb2000'), bb3000:g('bb3000') });
+  });
+  if (!rows.length) { showToast('No rows to save.','err'); return; }
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  api({ action:'submit', token:S.token, rows:JSON.stringify(rows) })
+    .then(function(r) {
+      btn.disabled = false; btn.textContent = 'Save Entry';
+      if (r.success) {
+        showToast(r.added + ' rows saved successfully.', 'ok');
+        document.getElementById('saveNote').textContent = 'Last saved: '+new Date().toLocaleTimeString();
+      } else showToast(r.message || 'Error saving.', 'err');
+    })
+    .catch(function(e) {
+      btn.disabled = false; btn.textContent = 'Save Entry';
+      showToast('Connection error: '+e.message,'err');
+    });
+}
+
+// ══ DASHBOARD ════════════════════════════════════════════════
+function loadDash(code) {
+  DASH_STORE = code;
+  if (S.role === 'admin') {
+    document.querySelectorAll('#dashPickerGrid .store-tile').forEach(function(t){
+      t.classList.toggle('sel', t.dataset.code === code);
+    });
+    var found = STORES.find(function(s){ return s.code===code; });
+    document.getElementById('dashTitle').textContent = code==='ALL'
+      ? 'All Stores' : (found ? found.name : code);
+    document.getElementById('dashBack').style.display = 'block';
+    if (code !== 'ALL') document.getElementById('fStore').value = code;
+    else document.getElementById('fStore').value = '';
+  }
+  document.getElementById('dashWrap').style.display = 'block';
+  applyFilters();
+}
+
+function backDashPicker() {
+  document.getElementById('dashWrap').style.display = 'none';
+  DASH_STORE = null;
+  document.querySelectorAll('#dashPickerGrid .store-tile').forEach(function(t){ t.classList.remove('sel'); });
+}
+
+function applyFilters() {
+  var from  = document.getElementById('fFrom').value;
+  var to    = document.getElementById('fTo').value;
+  var staff = document.getElementById('fStaff').value;
+  var store = S.role==='admin'
+    ? (document.getElementById('fStore').value || DASH_STORE || '')
+    : S.store.code;
+
+  document.getElementById('dashBody').innerHTML =
+    '<tr class="empty-row"><td colspan="12">Loading…</td></tr>';
+
+  api({ action:'dashboard', token:S.token,
+        storeCode: store||'', from:from, to:to })
+    .then(function(r) {
+      if (!r.success) { showToast(r.message||'Error','err'); return; }
+      var rows = r.rows;
+      if (staff) rows = rows.filter(function(x){ return x.staffName===staff; });
+      DASH_ROWS = rows;
+      renderKPIs(rows);
+      renderTable(rows);
+      buildStaffDrop(rows);
+    })
+    .catch(function(e) {
+      document.getElementById('dashBody').innerHTML =
+        '<tr class="empty-row"><td colspan="12">Error: '+e.message+'</td></tr>';
+    });
+}
+
+function resetFilters() {
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('fFrom').value  = today;
+  document.getElementById('fTo').value    = today;
+  document.getElementById('fStaff').value = '';
+  if (S.role==='admin') document.getElementById('fStore').value = '';
+  applyFilters();
+}
+
+function buildStaffDrop(rows) {
+  var names = [];
+  rows.forEach(function(r){ if(names.indexOf(r.staffName)<0) names.push(r.staffName); });
+  names.sort();
+  var s = document.getElementById('fStaff'), cur = s.value;
+  s.innerHTML = '<option value="">All staff</option>';
+  names.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; s.appendChild(o); });
+  s.value = cur;
+}
+
+function renderKPIs(rows) {
+  var ts=0,tt=0,tn=0,b15=0,b20=0,b30=0;
+  rows.forEach(function(r){
+    ts+=Number(r.sales); tt+=Number(r.target);
+    tn+=Number(r.nob); b15+=Number(r.bb1500);
+    b20+=Number(r.bb2000); b30+=Number(r.bb3000);
+  });
+  var ach = tt>0?((ts/tt)*100).toFixed(1):0;
+  var atv = tn>0?Math.round(ts/tn):0;
+  document.getElementById('kpiGrid').innerHTML =
+    mkKpi('Total Sales','₹'+fN(ts),rows.length+' entries',true)+
+    mkKpi('Target','₹'+fN(tt),'')+
+    mkKpi('Achievement',ach+'%',ach>=100?'On target':ach>=80?'Near target':'Below target',true)+
+    mkKpi('NOB',fN(tn),'bills')+
+    mkKpi('ATV','₹'+fN(atv),'avg per bill')+
+    mkKpi('BB ₹1500+',b15,'big bills')+
+    mkKpi('BB ₹2000+',b20,'big bills')+
+    mkKpi('BB ₹3000+',b30,'big bills');
+}
+function mkKpi(l,v,n,a) {
+  return '<div class="kpi-c'+(a?' accent':'')+'"><div class="kpi-label">'+l+'</div>'+
+    '<div class="kpi-val">'+v+'</div>'+(n?'<div class="kpi-note">'+n+'</div>':'')+
+    '</div>';
+}
+
+function renderTable(rows) {
+  var isAdmin = S.role==='admin';
+  var sorted  = rows.slice().sort(function(a,b){
+    var va=a[SORT_K], vb=b[SORT_K];
+    return typeof va==='string' ? SORT_D*va.localeCompare(vb) : SORT_D*(Number(va)-Number(vb));
+  });
+  if (!sorted.length) {
+    document.getElementById('dashBody').innerHTML =
+      '<tr class="empty-row"><td colspan="12">No data for selected filters.</td></tr>';
+    return;
+  }
+  document.getElementById('dashBody').innerHTML = sorted.map(function(r) {
+    var a=Number(r.ach), pc=a>=100?'pill-g':a>=80?'pill-a':'pill-r';
+    return '<tr>'+
+      '<td>'+r.date+'</td>'+
+      '<td>'+(isAdmin?r.storeName:'')+'</td>'+
+      '<td>'+r.staffName+'</td>'+
+      '<td>₹'+fN(r.sales)+'</td>'+
+      '<td>₹'+fN(r.target)+'</td>'+
+      '<td><span class="pill '+pc+'">'+r.ach+'%</span></td>'+
+      '<td>'+r.nob+'</td>'+
+      '<td>₹'+fN(r.atv)+'</td>'+
+      '<td>'+r.bigBill+'</td>'+
+      '<td>'+r.bb1500+'</td>'+
+      '<td>'+r.bb2000+'</td>'+
+      '<td>'+r.bb3000+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function srt(col) {
+  if(SORT_K===col) SORT_D*=-1; else{SORT_K=col;SORT_D=-1;}
+  renderTable(DASH_ROWS);
+}
+
+// ══ TABS ═════════════════════════════════════════════════════
+function switchTab(t) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active',b.dataset.tab===t); });
+  document.getElementById('tab-entry').style.display = t==='entry'?'block':'none';
+  document.getElementById('tab-dash').style.display  = t==='dash' ?'block':'none';
+}
+
+// ══ UTILS ════════════════════════════════════════════════════
+function fN(n) {
+  var x=Number(n)||0;
+  return x>=1e5?(x/1e5).toFixed(1)+'L':x>=1000?(x/1000).toFixed(1)+'K':''+x;
+}
+function showToast(msg,type) {
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast t-'+(type||'ok');
+  t.classList.add('show');
+  clearTimeout(t._tm);
+  t._tm=setTimeout(function(){ t.classList.remove('show'); },3000);
+}
+</script>
+</body>
+</html>
