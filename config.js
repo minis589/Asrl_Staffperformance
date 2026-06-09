@@ -9,4 +9,4 @@
 //  Example:
 //  "https://script.google.com/macros/s/AKfycbXXXXXXXXXX/exec"
 
-const API_URL = "https://script.google.com/macros/s/AKfycbx5feg5EO3zFPEkxU5juc2Td_eMQcszPrCKbZwsJr6KJPlmHuZBAjjk_q587oyG9OO2/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby7wBmPnP88kDKP1DSmcZyRZ9R4IeZuXfwsiWRyrG71nhyF2Tl6KlVw6hOqAbn7yIE/exec";
